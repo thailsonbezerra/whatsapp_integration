@@ -85,8 +85,25 @@ async def handle_webhook(payload: Dict[str, Any]):
             wamid = status_data["id"]
             status = status_data["status"]
             timestamp = status_data["timestamp"]
+            
+            # --- DEBUG ---
+            error_details = None
+            if "errors" in status_data:
+                error_details = status_data["errors"][0]
+                error_code = error_details.get("code")
+                error_title = error_details.get("title")
+                error_message = error_details.get("message")
+                
+                print(f"--- ERRO RECEBIDO ---")
+                print(f"WAMID: {wamid}")
+                print(f"Status: {status}")
+                print(f"Código do Erro: {error_code}")
+                print(f"Título: {error_title}")
+                print(f"Mensagem: {error_message}")
+                print(f"--- FIM DO ERRO ---")
+            else:
+                print(f"Status recebido: {status} para WAMID: {wamid} em {timestamp}")
 
-            print(f"Status recebido: {status} para WAMID: {wamid} em {timestamp}")            
         return {"success": True}
         
     except Exception as e:
