@@ -10,6 +10,7 @@ app = FastAPI()
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 WABA_PHONE_ID = os.getenv("WABA_PHONE_ID")
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 META_API_URL = os.getenv("META_API_URL", "https://graph.facebook.com/v22.0")
 
 class MessagePayload(BaseModel):
@@ -48,3 +49,37 @@ def send_message(payload: MessagePayload):
         raise HTTPException(status_code=response.status_code, detail=f"Erro da API da Meta: {err}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {e}")
+
+@app.get("/webhook", summary="Verificação do Webhook da Meta")
+def verify_webhook(request: Request):
+    mode = request.query_params.get("hub.mode")
+    token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        print("Webhook verificado com sucesso!")
+        return int(challenge)
+    
+    raise HTTPException(status_code=403, detail="Tokens de verificação não correspondem.")
+
+@app.post("/webhook", summary="Recebe as notificações de status da Meta")
+async def handle_webhook(payload: Dict[str, Any]):
+    # Em um ambiente de produção, verificar X-Hub-Signature-256 do cabeçalho para garantir que a requisição veio realmente da Meta.
+    
+    try:
+        entry = payload["entry"][0]
+        changes = entry["changes"][0]
+        value = changes["value"]
+        
+        if "statuses" in value:
+            status_data = value["statuses"][0]
+            wamid = status_data["id"]
+            status = status_data["status"]
+            timestamp = status_data["timestamp"]
+
+            print(f"Status recebido: {status} para WAMID: {wamid} em {timestamp}")            
+        return {"success": True}
+        
+    except Exception as e:
+        print(f"Erro ao processar webhook: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno ao processar o webhook.")
