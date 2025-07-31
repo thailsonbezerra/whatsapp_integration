@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    container_name: whatsapp_integration
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/docs || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
