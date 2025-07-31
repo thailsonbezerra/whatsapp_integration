@@ -1,11 +1,11 @@
 from typing import Any, Dict
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 import requests
 from dotenv import load_dotenv
 import os
 
-load_dotenv() 
+load_dotenv()
 
 app = FastAPI()
 
@@ -13,6 +13,15 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 WABA_PHONE_ID = os.getenv("WABA_PHONE_ID")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 META_API_URL = os.getenv("META_API_URL", "https://graph.facebook.com/v22.0")
+
+# falhar cedo se faltar configuração essencial
+missing = [k for k, v in {
+    "ACCESS_TOKEN": ACCESS_TOKEN,
+    "WABA_PHONE_ID": WABA_PHONE_ID,
+    "VERIFY_TOKEN": VERIFY_TOKEN
+}.items() if not v]
+if missing:
+    raise RuntimeError(f"Faltando variáveis de ambiente obrigatórias: {', '.join(missing)}")
 
 class MessagePayload(BaseModel):
     sender: str
@@ -51,22 +60,21 @@ def send_message(payload: MessagePayload):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {e}")
 
-@app.get("/webhook", summary="Verificação do Webhook da Meta")
-def verify_webhook(request: requests.Request):
+@app.get("/webhook", summary="Verificação do Webhook da Meta", response_model=None)
+def verify_webhook(request: Request):
     mode = request.query_params.get("hub.mode")
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
 
-    if mode == "subscribe" and token == VERIFY_TOKEN:
+    if mode == "subscribe" and token == VERIFY_TOKEN and challenge is not None:
         print("Webhook verificado com sucesso!")
-        return int(challenge)
+        return Response(content=challenge, media_type="text/plain")
     
-    raise HTTPException(status_code=403, detail="Tokens de verificação não correspondem.")
+    raise HTTPException(status_code=403, detail="Falha na verificação do webhook.")
 
 @app.post("/webhook", summary="Recebe as notificações de status da Meta")
 async def handle_webhook(payload: Dict[str, Any]):
-    # Em um ambiente de produção, verificar X-Hub-Signature-256 do cabeçalho para garantir que a requisição veio realmente da Meta.
-    
+    # Em produção: validar assinatura X-Hub-Signature-256 aqui.
     try:
         entry = payload["entry"][0]
         changes = entry["changes"][0]
