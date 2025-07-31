@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
@@ -51,7 +52,7 @@ def send_message(payload: MessagePayload):
         raise HTTPException(status_code=500, detail=f"Erro interno: {e}")
 
 @app.get("/webhook", summary="Verificação do Webhook da Meta")
-def verify_webhook(request: Request):
+def verify_webhook(request: requests.Request):
     mode = request.query_params.get("hub.mode")
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
