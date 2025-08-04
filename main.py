@@ -80,32 +80,124 @@ async def handle_webhook(payload: Dict[str, Any]):
         changes = entry["changes"][0]
         value = changes["value"]
         
-        if "statuses" in value:
-            status_data = value["statuses"][0]
-            wamid = status_data["id"]
-            status = status_data["status"]
-            timestamp = status_data["timestamp"]
-            
-            # --- DEBUG ---
-            error_details = None
-            if "errors" in status_data:
-                error_details = status_data["errors"][0]
-                error_code = error_details.get("code")
-                error_title = error_details.get("title")
-                error_message = error_details.get("message")
-                
-                print(f"--- ERRO RECEBIDO ---")
-                print(f"WAMID: {wamid}")
-                print(f"Status: {status}")
-                print(f"Código do Erro: {error_code}")
-                print(f"Título: {error_title}")
-                print(f"Mensagem: {error_message}")
-                print(f"--- FIM DO ERRO ---")
-            else:
-                print(f"Status recebido: {status} para WAMID: {wamid} em {timestamp}")
-
-        return {"success": True}
+        phone_number_waba = value.get("metadata", {}).get("phone_number_id")
         
+
+        print(f"Payload recebido: {payload}")
+        data = normalize_webhook_event(value, phone_number_waba)
+
+        return {"success": True, "data": data}
+
     except Exception as e:
         print(f"Erro ao processar webhook: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao processar o webhook.")
+    
+from typing import Any, Dict, Optional
+
+def normalize_webhook_event(payload: Dict[str, Any], phone_number_waba: str) -> Optional[Dict[str, Any]]:
+    unified = {
+        "recipient": None,
+        "sender": phone_number_waba,
+        "message_id": None,
+        "timestamp": None,
+        "subject": None,
+        "body": None,
+        "type": None,
+        "event_type": None,
+        "channel_type": "whatsapp",
+        "origin_msg_id": None,
+    }
+
+    print(payload)
+    
+    # --------------------
+    # Processa eventos de ERROS
+    # --------------------
+    if "errors" in payload:
+        try:
+            error_data = payload["errors"][0]
+            # TODO: Fazer o mapeamento dos códigos de erro da Meta para os códigos de erro do sistema
+            code_error_meta = error_data.get("code")
+            unified["event_type"] = "error"
+            unified["timestamp"] = payload.get("timestamp")
+            unified["subject"] = error_data.get("title")
+            unified["body"] = error_data.get("message")
+            unified["type"] = "failed" # Um erro é um tipo de falha
+            unified["message_id"] = payload.get("id")
+            unified["recipient"] = payload.get("from")
+            return unified
+        except Exception:
+            return None
+    
+    # status event
+    elif "statuses" in payload:
+        try:
+            status_data = payload["statuses"][0]
+            unified["event_type"] = "status"
+            unified["message_id"] = status_data.get("id")
+            unified["timestamp"] = status_data.get("timestamp")
+            unified["recipient"] = status_data.get("recipient_id")
+            unified["type"] = status_data.get("status")  # sent, delivered etc.
+            # body/subject ficam vazios para status
+            return unified
+        except Exception:
+            return None
+
+    # message event
+    elif "messages" in payload:
+            try:
+                message_data = payload["messages"][0]
+                unified["event_type"] = "message"
+                unified["message_id"] = message_data.get("id")
+                unified["timestamp"] = message_data.get("timestamp")
+                unified["recipient"] = message_data.get("from")
+                
+                msg_type = message_data.get("type")
+
+                # Captura a mensagem contextual (reply)
+                context = message_data.get("context", {})
+                if context:
+                    unified["origin_msg_id"] = context.get("id")
+
+                if msg_type == "text":
+                    unified["type"] = "text"
+                    unified["body"] = message_data.get("text", {}).get("body")
+                
+                elif msg_type in ["image", "video", "audio", "document", "sticker"]:
+                    media_data = message_data.get(msg_type, {})
+                    unified["type"] = "media"
+                    unified["subject"] = media_data.get("caption") # Legenda como subject
+                    unified["body"] = media_data.get("id") # ID da mídia como body
+                
+                elif msg_type == "button":
+                    button_data = message_data.get("button", {})
+                    unified["type"] = "interactive_reply"
+                    unified["subject"] = button_data.get("text") # Título como subject
+                    unified["body"] = button_data.get("payload") # Payload/ID do botão como body
+                
+                # elif msg_type == "interactive":
+                #     interactive_data = message_data.get("interactive", {})
+                #     interactive_type = interactive_data.get("type")
+                #     unified["type"] = "interactive_reply"
+                #     if interactive_type == "list_reply":
+                #         reply_data = interactive_data.get("list_reply", {})
+                #         unified["subject"] = reply_data.get("title")
+                #         unified["body"] = reply_data.get("id")
+                #     elif interactive_type == "button_reply":
+                #         reply_data = interactive_data.get("button_reply", {})
+                #         unified["subject"] = reply_data.get("title")
+                #         unified["body"] = reply_data.get("id")
+                
+                elif msg_type == "reaction":
+                    reaction_data = message_data.get("reaction", {})
+                    unified["type"] = "reaction"
+                    unified["body"] = reaction_data.get("emoji")
+                    unified["origin_msg_id"] = reaction_data.get("message_id") # ID da mensagem reagida
+                    
+                return unified
+            except Exception as e:
+                print(f"Erro ao processar mensagem do webhook: {e}")
+                return None
+            
+    return None
+
