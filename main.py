@@ -1,9 +1,10 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 import requests
 from dotenv import load_dotenv
 import os
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -23,40 +24,43 @@ missing = [k for k, v in {
 if missing:
     raise RuntimeError(f"Faltando variáveis de ambiente obrigatórias: {', '.join(missing)}")
 
-class MessagePayload(BaseModel):
-    sender: str
+class SendMessagePayload(BaseModel):
     recipient: str
-    message_type: str
-    content: str
-    message_id: str = None 
-
-@app.post("/send-message", summary="Envia uma mensagem SAC para o WhatsApp")
-def send_message(payload: MessagePayload):
-    print("Authorization token:", ACCESS_TOKEN)
-    meta_payload = {
-        "messaging_product": "whatsapp",
-        "to": payload.recipient,
-        "type": payload.message_type,
-        "text": {"body": payload.content}
-    }
+    sender: str
+    type: str
+    body: Optional[str] = None
+    subject: Optional[str] = None
+    origin_msg_id: Optional[str] = None
     
-    if payload.message_id:
-        meta_payload["context"] = {"message_id": payload.message_id}
 
-    headers = {
-        "Authorization": f"Bearer {ACCESS_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    url = f"{META_API_URL}/{WABA_PHONE_ID}/messages"
-    
+@app.post("/send-message", summary="Envia uma mensagem para o WhatsApp")
+def send_message(payload: SendMessagePayload):
+    """
+    Novo endpoint que usa o payload unificado para enviar mensagens de texto, mídia e reações.
+    """
     try:
-        response = requests.post(url, headers=headers, json=meta_payload)
-        response.raise_for_status() 
+        meta_payload = encode_to_meta_api(payload)
         
-        return {"success": True, "data": response.json()}
+        return meta_payload            
+       
+        #Integrar com a API da Meta
+        # Descomente as linhas abaixo para enviar a mensagem via API da Meta
+        
+        # headers = {
+        #     "Authorization": f"Bearer {ACCESS_TOKEN}",
+        #     "Content-Type": "application/json"
+        # }
+        # url = f"{META_API_URL}/{WABA_PHONE_ID}/messages"
+        
+        # response = requests.post(url, headers=headers, json=meta_payload)
+        # response.raise_for_status() 
+        
+        # return {"success": True, "data": response.json()}
     
     except requests.exceptions.HTTPError as err:
-        raise HTTPException(status_code=response.status_code, detail=f"Erro da API da Meta: {err}")
+        raise HTTPException(status_code=response.status_code, detail=f"Erro da API da Meta: {err.response.text}")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {e}")
 
@@ -201,3 +205,106 @@ def normalize_webhook_event(payload: Dict[str, Any], phone_number_waba: str) -> 
             
     return None
 
+def infer_mime_type_from_url(url: str) -> str:
+    """
+    Inferir o mime-type de uma URL com base na extensão do arquivo.
+    """
+    # Mapeamento de extensões para mime-types
+    mime_types = {
+        # Audio
+        ".aac": "audio/aac",
+        ".amr": "audio/amr",
+        ".mp3": "audio/mpeg",
+        ".m4a": "audio/mp4",
+        ".ogg": "audio/ogg",
+        
+        # Documentos
+        ".txt": "text/plain",
+        ".xls": "application/vnd.ms-excel",
+        ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".doc": "application/msword",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".ppt": "application/vnd.ms-powerpoint",
+        ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ".pdf": "application/pdf",
+        
+        # Imagens
+        ".jpeg": "image/jpeg",
+        ".jpg": "image/jpeg", 
+        ".png": "image/png",
+
+        # Vídeos
+        ".3gp": "video/3gpp",
+        ".mp4": "video/mp4",
+    }
+    
+    # Extrai o caminho do arquivo da URL
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    
+    # Extrai a extensão
+    extension = os.path.splitext(path)[1].lower()
+    
+    return mime_types.get(extension)
+
+def encode_to_meta_api(payload: SendMessagePayload) -> Dict[str, Any]:
+    """
+    Transforma o payload unificado no formato da API da Meta.
+    """
+    meta_payload = {
+        "messaging_product": "whatsapp",
+        "to": payload.recipient,
+    }
+    
+    if payload.type == "text":
+        if not payload.body:
+            raise ValueError("O campo 'body' é obrigatório para o tipo 'text'.")
+        meta_payload["type"] = "text"
+        meta_payload["text"] = {"body": payload.body}
+
+    elif payload.type == "media":
+        if not payload.body:
+            raise ValueError("O campo 'body' (URL) é obrigatório para o tipo 'media'.")
+        
+        meta_media_type = infer_mime_type_from_url(payload.body)
+        if not meta_media_type:
+            raise ValueError("Não foi possível inferir o tipo de mídia da URL fornecida.")
+        
+        if meta_media_type.startswith("image/"):
+            meta_media_type = "image"
+        elif meta_media_type.startswith("video/"):  
+            meta_media_type = "video"
+        elif meta_media_type.startswith("audio/"):
+            meta_media_type = "audio"
+        elif meta_media_type in ["application/pdf", "application/msword",
+                                 "application/vnd.ms-excel",
+                                 "application/vnd.ms-powerpoint",
+                                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                                 "text/plain"]:
+            meta_media_type = "document"
+        else:
+            raise ValueError(f"Tipo de mídia não suportado: {meta_media_type}")
+        
+        meta_payload["type"] = meta_media_type
+        
+        media_content = {"link": payload.body}
+        if payload.subject:
+            media_content["caption"] = payload.subject
+        
+        meta_payload[meta_media_type] = media_content
+
+    elif payload.type == "reaction":
+        if not payload.body or not payload.origin_msg_id:
+            raise ValueError("Os campos 'body' (emoji) e 'origin_msg_id' são obrigatórios para 'reaction'.")
+        meta_payload["type"] = "reaction"
+        meta_payload["reaction"] = {
+            "message_id": payload.origin_msg_id,
+            "emoji": payload.body
+        }
+    
+    if payload.origin_msg_id and payload.type != "reaction":
+        meta_payload["context"] = {"message_id": payload.origin_msg_id}
+
+    return meta_payload   
