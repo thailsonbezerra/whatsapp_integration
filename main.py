@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Literal
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 import requests
@@ -27,23 +27,29 @@ if missing:
 class SendMessagePayload(BaseModel):
     recipient: str
     sender: str
-    type: str
+    type: Literal["text", "media", "reaction"]
     body: Optional[str] = None
     subject: Optional[str] = None
     origin_msg_id: Optional[str] = None
     
 
+class StatusPayload(BaseModel):
+    type: Literal["read", "writing"]
+    msg_id: str
+    sender: str
+
 @app.post("/send-message", summary="Envia uma mensagem para o WhatsApp")
 def send_message(payload: SendMessagePayload):
     """
-    Novo endpoint que usa o payload unificado para enviar mensagens de texto, mídia e reações.
+    Endpoint que usa o payload unificado para enviar mensagens de texto, mídia e reações.
     """
     try:
+        # Com o sender (número do waba) pegar o waba_phone_id no db
         meta_payload = encode_to_meta_api(payload)
         
         return meta_payload            
        
-        #Integrar com a API da Meta
+        # Integrar com a API da Meta
         # Descomente as linhas abaixo para enviar a mensagem via API da Meta
         
         # headers = {
@@ -59,6 +65,49 @@ def send_message(payload: SendMessagePayload):
     
     except requests.exceptions.HTTPError as err:
         raise HTTPException(status_code=response.status_code, detail=f"Erro da API da Meta: {err.response.text}")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro interno: {e}")
+
+@app.post("/send-status", summary="Envia indicação de read/typing para o WhatsApp")
+def send_status(payload: StatusPayload):
+    """
+    type: 'read' ou 'writing'
+    msg_id: id da mensagem de referência
+    sender: número do waba
+    """
+    try:
+        meta_payload: Dict[str, Any] = {
+            "messaging_product": "whatsapp",
+            "message_id": payload.msg_id,
+            "status": "read",
+        }
+
+
+        if payload.type == "writing":
+            meta_payload["typing_indicator"] = {"type": "text"}
+
+        # enviar para a API da Meta
+        # com o sender (número do waba) pegar o waba_phone_id no db
+
+        # headers = {
+        #     "Authorization": f"Bearer {ACCESS_TOKEN}",
+        #     "Content-Type": "application/json",
+        # }
+        # url = f"{META_API_URL}/{WABA_PHONE_ID}/messages"
+
+        # response = requests.post(url, headers=headers, json=meta_payload)
+        # response.raise_for_status()
+
+        # return {"success": True, "data": response.json()}
+
+        return meta_payload
+    
+    except requests.exceptions.HTTPError as err:
+        status_code = err.response.status_code if err.response is not None else 500
+        detail = err.response.text if err.response is not None else str(err)
+        raise HTTPException(status_code=status_code, detail=f"Erro da API da Meta: {detail}")
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
