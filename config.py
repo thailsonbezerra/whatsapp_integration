@@ -9,8 +9,9 @@ class AppConfig:
     WABA_PHONE_ID = os.getenv("WABA_PHONE_ID")
     VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
     ENV = os.getenv("ENV", "test")
+    AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
     
     @classmethod
     def validate(cls):
-        if not cls.ACCESS_TOKEN or not cls.WABA_PHONE_ID or not cls.VERIFY_TOKEN:
+        if not cls.ACCESS_TOKEN or not cls.WABA_PHONE_ID or not cls.VERIFY_TOKEN or not cls.AWS_BUCKET_NAME:
             raise ValueError("Variáveis de ambiente obrigatórias não configuradas.")

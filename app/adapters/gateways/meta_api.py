@@ -18,3 +18,23 @@ class MetaApiAdapter(MetaApiOutputPort):
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         return response.json()
+
+    def get_media_url(self, media_id: str) -> str:
+        url = f"{self.api_url}/{media_id}"
+        headers = {
+            "Authorization": f"Bearer {self.access_token}"
+        }
+        
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("url")
+        
+    def download_media(self, media_url: str) -> bytes:
+        headers = {
+            "Authorization": f"Bearer {self.access_token}"
+        }
+
+        response = requests.get(media_url, headers=headers)
+        response.raise_for_status()
+        return response.content

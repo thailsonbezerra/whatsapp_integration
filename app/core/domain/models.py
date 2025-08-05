@@ -14,7 +14,7 @@ class StatusPayload(BaseModel):
     msg_id: str
     sender: str
 
-class WebhookEvent(BaseModel):
+class NormalizedEvent(BaseModel):
     recipient: Optional[str] = None
     sender: str
     message_id: Optional[str] = None

@@ -11,3 +11,9 @@ class SendStatusInputPort(ABC):
     @abstractmethod
     def execute(self, payload: StatusPayload) -> Dict:
         pass
+
+# TODO: Mover ProcessWebhookPort para um local mais apropriado
+class ProcessWebhookPort(ABC):
+    @abstractmethod
+    def execute(self, payload: Dict) -> None:
+        pass
