@@ -26,7 +26,7 @@ async def handle_webhook(payload: dict):
 
         data = normalize_webhook_event(value, phone_number_waba)
 
-        return {"success": True, "data": data}
+        return data
     except Exception as e:
         print(f"Erro ao processar webhook: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao processar o webhook.")

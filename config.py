@@ -8,6 +8,7 @@ class AppConfig:
     ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
     WABA_PHONE_ID = os.getenv("WABA_PHONE_ID")
     VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+    ENV = os.getenv("ENV", "test")
     
     @classmethod
     def validate(cls):
