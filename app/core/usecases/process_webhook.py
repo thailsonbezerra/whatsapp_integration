@@ -10,8 +10,12 @@ class ProcessWebhookUseCase(ProcessWebhookPort):
         self.storage = storage
         self.meta_api = meta_api
 
-    def execute(self, payload: dict) -> dict:
-        phone_number_waba = payload.get("metadata", {}).get("phone_number_id")
+    def execute(self, waba_id, payload: dict) -> dict:
+        print("=========================================================")
+        print(f"Processing webhook for WABA ID: {waba_id}")
+        
+        phone_number_id_waba = payload.get("metadata", {}).get("phone_number_id")
+        phone_number_waba = payload.get("metadata", {}).get("display_phone_number")
         normalized = normalize_webhook_event(payload, phone_number_waba)
         
         print(f"Webhook normalizado: {normalized}")

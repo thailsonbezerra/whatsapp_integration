@@ -3,7 +3,7 @@ from typing import Dict, Optional
 def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[Dict]:
     unified = {
         "recipient": None,
-        "sender": phone_number_waba,
+        "sender": None,
         "message_id": None,
         "timestamp": None,
         "subject": None,
@@ -17,9 +17,9 @@ def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[D
     if "errors" in payload:
         return _normalize_error_event(payload, unified)
     elif "statuses" in payload:
-        return _normalize_status_event(payload, unified)
+        return _normalize_status_event(payload, unified, phone_number_waba)
     elif "messages" in payload:
-        return _normalize_message_event(payload, unified)
+        return _normalize_message_event(payload, unified, phone_number_waba)
 
     return None
 
@@ -33,19 +33,20 @@ def _normalize_error_event(payload, unified):
             "body": error.get("message"),
             "type": "failed",
             "message_id": payload.get("id"),
-            "recipient": payload.get("from")
+            "sender": payload.get("from")
         })
         return unified
     except Exception:
         return None
 
-def _normalize_status_event(payload, unified):
+def _normalize_status_event(payload, unified, phone_number_waba):
     try:
         status = payload["statuses"][0]
         unified.update({
             "event_type": "status",
             "message_id": status.get("id"),
             "timestamp": status.get("timestamp"),
+            "sender": phone_number_waba,
             "recipient": status.get("recipient_id"),
             "type": status.get("status"),
         })
@@ -53,7 +54,7 @@ def _normalize_status_event(payload, unified):
     except Exception:
         return None
 
-def _normalize_message_event(payload, unified):
+def _normalize_message_event(payload, unified, phone_number_waba):
     try:
         message = payload["messages"][0]
         msg_type = message.get("type")
@@ -63,7 +64,8 @@ def _normalize_message_event(payload, unified):
             "event_type": "message",
             "message_id": message.get("id"),
             "timestamp": message.get("timestamp"),
-            "recipient": message.get("from"),
+            "sender": message.get("from"),
+            "recipient": phone_number_waba,
             "origin_msg_id": context.get("id") if context else None,
             "type": msg_type
         })

@@ -30,9 +30,12 @@ async def handle_webhook(payload: dict):
             storage=S3StorageAdapter(bucket_name=AppConfig.AWS_BUCKET_NAME),
             meta_api=get_meta_adapter()
         )
-        result = usecase.execute(payload["entry"][0]["changes"][0]["value"])
-        print(f"Processed webhook result: {result}")
-        print("=========================================================")
+        
+        result = usecase.execute(
+            payload["entry"][0]["id"],
+            payload["entry"][0]["changes"][0]["value"]
+        )
+        
         return result
     except Exception as e:
         print(f"Erro ao processar webhook: {e}")
