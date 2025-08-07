@@ -20,9 +20,11 @@ class ProcessWebhookUseCase(ProcessWebhookPort):
         
         print(f"Webhook normalizado: {normalized}")
 
-        if normalized["type"] in ["image", "video", "audio", "document", "sticker"]:
+        if normalized["type"] == "media":
+            print("Processing media message...")
             media_id = normalized["body"]
             
+            print(f"Obtendo URL da mídia para media_id: {media_id}")
             media_url = self.meta_api.get_media_url(media_id)
             if not media_url:
                 raise ValueError(f"Media URL not found for media_id: {media_id}")

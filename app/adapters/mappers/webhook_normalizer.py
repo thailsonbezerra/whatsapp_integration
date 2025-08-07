@@ -75,6 +75,7 @@ def _normalize_message_event(payload, unified, phone_number_waba):
         elif msg_type in ["image", "video", "audio", "document", "sticker"]:
             media = message.get(msg_type, {})
             unified.update({
+                "type": "media",
                 "subject": media.get("caption"),
                 "body": media.get("id")
             })
