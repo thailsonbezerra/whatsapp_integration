@@ -9,27 +9,49 @@ class SendMessageUseCase(SendMessageInputPort):
         self.meta_gateway = meta_gateway
 
     def execute(self, payload: SendMessagePayload) -> Dict:
+        validation_error = self._validate_payload(payload)
+        if validation_error:
+            return {"success": False, "error": validation_error}
+
+        meta_payload = self._build_meta_payload(payload)
+
+        result = self.meta_gateway.send_message(meta_payload)
+        if "error" in result:
+            return {"success": False, "error": "Failed to send message to Meta API."}
+
+        return {"success": True, "data": result}
+
+    def _validate_payload(self, payload: SendMessagePayload) -> str | None:
+        if payload.type == "text" and not payload.body:
+            return "O campo 'body' é obrigatório para o tipo 'text'."
+
+        if payload.type == "media":
+            if not payload.body:
+                return "O campo 'body' (URL) é obrigatório para o tipo 'media'."
+            media_mime = infer_mime_type_from_url(payload.body)
+            meta_type = get_meta_media_type(media_mime)
+            if not meta_type:
+                return "Tipo de mídia não suportado."
+
+        if payload.type == "reaction":
+            if not payload.body or not payload.origin_msg_id:
+                return "Campos 'body' e 'origin_msg_id' são obrigatórios para reações."
+
+        return None
+
+    def _build_meta_payload(self, payload: SendMessagePayload) -> Dict:
         meta_payload = {
             "messaging_product": "whatsapp",
             "to": payload.recipient,
         }
 
         if payload.type == "text":
-            if not payload.body:
-                raise ValueError("O campo 'body' é obrigatório para o tipo 'text'.")
             meta_payload["type"] = "text"
             meta_payload["text"] = {"body": payload.body}
 
         elif payload.type == "media":
-            if not payload.body:
-                raise ValueError("O campo 'body' (URL) é obrigatório para o tipo 'media'.")
-            
             media_mime = infer_mime_type_from_url(payload.body)
             meta_type = get_meta_media_type(media_mime)
-            
-            if not meta_type:
-                raise ValueError("Tipo de mídia não suportado.")
-            
             meta_payload["type"] = meta_type
             media_content = {"link": payload.body}
             if payload.subject:
@@ -37,8 +59,6 @@ class SendMessageUseCase(SendMessageInputPort):
             meta_payload[meta_type] = media_content
 
         elif payload.type == "reaction":
-            if not payload.body or not payload.origin_msg_id:
-                raise ValueError("Campos 'body' e 'origin_msg_id' são obrigatórios para reações.")
             meta_payload["type"] = "reaction"
             meta_payload["reaction"] = {
                 "message_id": payload.origin_msg_id,
@@ -48,4 +68,4 @@ class SendMessageUseCase(SendMessageInputPort):
         if payload.origin_msg_id and payload.type != "reaction":
             meta_payload["context"] = {"message_id": payload.origin_msg_id}
 
-        return self.meta_gateway.send_message(meta_payload)
+        return meta_payload

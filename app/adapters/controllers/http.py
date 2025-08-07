@@ -8,12 +8,11 @@ router = APIRouter()
 
 @router.post("/send-message")
 def send_message(payload: SendMessagePayload):
-    try:
-        usecase = SendMessageUseCase(get_meta_adapter())
-        result = usecase.execute(payload)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    usecase = SendMessageUseCase(get_meta_adapter())
+    result = usecase.execute(payload)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to send message."))
+    return result
 
 
 @router.post("/send-status")

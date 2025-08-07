@@ -20,8 +20,6 @@ class MetaApiAdapter(MetaApiOutputPort):
         print(f"Sending payload to Meta API: {payload}")  # Debugging line
         
         response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        
         print(f"Response from Meta API: {response.json()}")  # Debugging line
         print("========================================================")
         return response.json()
