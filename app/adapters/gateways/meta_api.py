@@ -10,13 +10,20 @@ class MetaApiAdapter(MetaApiOutputPort):
         self.waba_phone_id = AppConfig.WABA_PHONE_ID
 
     def send_message(self, payload: Dict) -> Dict:
+        print("========================================================")
         url = f"{self.api_url}/{self.waba_phone_id}/messages"
         headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json"
         }
+        
+        print(f"Sending payload to Meta API: {payload}")  # Debugging line
+        
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
+        
+        print(f"Response from Meta API: {response.json()}")  # Debugging line
+        print("========================================================")
         return response.json()
 
     def get_media_url(self, media_id: str) -> str:
