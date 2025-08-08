@@ -17,4 +17,8 @@ class SendStatusUseCase(SendStatusInputPort):
         if payload.type == "writing":
             meta_payload["typing_indicator"] = {"type": "text"}
 
-        return self.meta_gateway.send_message(meta_payload)
+        result = self.meta_gateway.send_message(meta_payload)
+        if "error" in result:
+            return {"success": False, "error": "Failed to send status to Meta API."}
+        
+        return {"success": True, "data": result}
