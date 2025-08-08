@@ -25,21 +25,42 @@ class MetaApiAdapter(MetaApiOutputPort):
         return response.json()
 
     def get_media_url(self, media_id: str) -> str:
+        print("========================================================")
         url = f"{self.api_url}/{media_id}"
         headers = {
             "Authorization": f"Bearer {self.access_token}"
         }
         
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        return data.get("url")
+        print(f"Fetching media URL for media_id: {media_id}")  # Debugging line
         
-    def download_media(self, media_url: str) -> bytes:
+        response = requests.get(url, headers=headers)
+        print(f"Media URL response: {response.json()}")
+        print("========================================================")
+
+        return response.json()
+        
+    def download_media(self, media_url: str) -> dict:
         headers = {
             "Authorization": f"Bearer {self.access_token}"
         }
 
+        print(f"Downloading media from URL: {media_url}")
         response = requests.get(media_url, headers=headers)
-        response.raise_for_status()
-        return response.content
+
+        print(f"Media download response: {response.status_code}")
+        
+        # Extrair o nome do arquivo do header 'Content-Disposition'
+        content_disposition = response.headers.get("Content-Disposition")
+        print(f"Content-Disposition header: {content_disposition}")
+        file_name = None
+        if content_disposition:
+            parts = content_disposition.split(";")
+            for part in parts:
+                if "filename=" in part:
+                    file_name = part.split("=")[1].strip().strip('"')
+                    break
+        
+        return {
+            "content": response.content,
+            "filename": file_name,
+        }

@@ -24,16 +24,25 @@ class ProcessWebhookUseCase(ProcessWebhookPort):
             print("Processing media message...")
             media_id = normalized["body"]
             
-            print(f"Obtendo URL da mídia para media_id: {media_id}")
-            media_url = self.meta_api.get_media_url(media_id)
-            if not media_url:
-                raise ValueError(f"Media URL not found for media_id: {media_id}")
+            media = self.meta_api.get_media_url(media_id)
             
-            print(f"Baixando mídia de: {media_url}")
+            print(f"Media details: {media}")
+            
+            if not media:
+                raise Exception(f"Media not found for ID: {media_id}")
+            
+            media_url = media.get("url")
+            
             media = self.meta_api.download_media(media_url)
-            file_obj = BytesIO(media["content"])
-            filename = f"{media_id}.{media['extension']}"
-            #TODO: Decidir se retorna a url do s3 ou o id da midia?
-            self.storage.upload_file(file_obj, filename, media["content_type"])
             
+            if not media:
+                raise Exception(f"Failed to download media from URL: {media_url}")
+
+            uploaded_file_path = self.storage.upload_file(BytesIO(media["content"]), media["filename"]) 
+            normalized.update({
+                "media": {
+                    "body": uploaded_file_path,
+                }
+            })
+
         return normalized
