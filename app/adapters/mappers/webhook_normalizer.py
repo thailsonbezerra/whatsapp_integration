@@ -40,6 +40,7 @@ def _normalize_error_event(payload, unified):
         return None
 
 def _normalize_status_event(payload, unified, phone_number_waba):
+    print("Normalizing status event...")
     try:
         status = payload["statuses"][0]
         unified.update({
@@ -55,6 +56,7 @@ def _normalize_status_event(payload, unified, phone_number_waba):
         return None
 
 def _normalize_message_event(payload, unified, phone_number_waba):
+    print("Normalizing message event...")
     try:
         message = payload["messages"][0]
         msg_type = message.get("type")
