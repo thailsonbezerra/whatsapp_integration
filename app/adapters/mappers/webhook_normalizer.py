@@ -3,6 +3,7 @@ from typing import Dict, Optional
 def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[Dict]:
     unified = {
         "recipient": None,
+        "sender_name": None,
         "sender": None,
         "message_id": None,
         "timestamp": None,
@@ -58,6 +59,9 @@ def _normalize_status_event(payload, unified, phone_number_waba):
 def _normalize_message_event(payload, unified, phone_number_waba):
     print("Normalizing message event...")
     try:
+        contact = payload["contacts"][0]
+        profile = contact.get("profile", {})
+        
         message = payload["messages"][0]
         msg_type = message.get("type")
         context = message.get("context", {})
@@ -67,6 +71,7 @@ def _normalize_message_event(payload, unified, phone_number_waba):
             "message_id": message.get("id"),
             "timestamp": message.get("timestamp"),
             "sender": message.get("from"),
+            "sender_name": profile.get("name"),
             "recipient": phone_number_waba,
             "origin_msg_id": context.get("id") if context else None,
             "type": msg_type
