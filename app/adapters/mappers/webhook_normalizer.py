@@ -9,7 +9,7 @@ def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[D
         "timestamp": None,
         "subject": None,
         "body": None,
-        "type": None,
+        "message_type": None,
         "event_type": None,
         "channel_type": "whatsapp",
         "origin_msg_id": None,
@@ -32,7 +32,7 @@ def _normalize_error_event(payload, unified):
             "timestamp": payload.get("timestamp"),
             "subject": error.get("title"),
             "body": error.get("message"),
-            "type": "failed",
+            "message_type": "failed",
             "message_id": payload.get("id"),
             "sender": payload.get("from")
         })
@@ -50,7 +50,7 @@ def _normalize_status_event(payload, unified, phone_number_waba):
             "timestamp": status.get("timestamp"),
             "sender": phone_number_waba,
             "recipient": status.get("recipient_id"),
-            "type": status.get("status"),
+            "message_type": status.get("status"),
         })
         return unified
     except Exception:
@@ -74,7 +74,7 @@ def _normalize_message_event(payload, unified, phone_number_waba):
             "sender_name": profile.get("name"),
             "recipient": phone_number_waba,
             "origin_msg_id": context.get("id") if context else None,
-            "type": msg_type
+            "message_type": msg_type
         })
 
         if msg_type == "text":
@@ -82,7 +82,7 @@ def _normalize_message_event(payload, unified, phone_number_waba):
         elif msg_type in ["image", "video", "audio", "document", "sticker"]:
             media = message.get(msg_type, {})
             unified.update({
-                "type": "media",
+                "message_type": "media",
                 "subject": media.get("caption"),
                 "body": media.get("id")
             })
