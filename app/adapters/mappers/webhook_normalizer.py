@@ -58,6 +58,7 @@ def _normalize_status_event(payload, unified, phone_number_waba):
 
 def _normalize_message_event(payload, unified, phone_number_waba):
     print("Normalizing message event...")
+    print("Payload content:", payload)  # Debugging line
     try:
         contact = payload["contacts"][0]
         profile = contact.get("profile", {})
