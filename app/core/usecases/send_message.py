@@ -49,6 +49,26 @@ class SendMessageUseCase(SendMessageInputPort):
             meta_payload["type"] = "text"
             meta_payload["text"] = {"body": payload.body}
 
+        elif payload.type == "notification":
+            meta_payload["type"] = "template"
+            
+            # Constrói o dicionário de componentes para o template
+            template_components = []
+            if payload.body:  # Verifica se a lista de parâmetros não está vazia
+                parameters = [{"type": "text", "text": param} for param in payload.body]
+                template_components.append({
+                    "type": "body",
+                    "parameters": parameters
+                })
+
+            meta_payload["template"] = {
+                "name": payload.subject,
+                "language": {
+                    "code": "pt_BR"
+                },
+                "components": template_components
+            }
+            
         elif payload.type == "media":
             media_mime = infer_mime_type_from_url(payload.body)
             meta_type = get_meta_media_type(media_mime)
