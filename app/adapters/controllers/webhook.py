@@ -9,14 +9,9 @@ router = APIRouter()
 
 @router.get("/webhook", summary="Verificação do Webhook da Meta") 
 def verify_webhook(request: Request):
-    print("=========================================================")
     mode = request.query_params.get("hub.mode")
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
-    
-    print(f"Webhook verification request received: mode={mode}, token={token}, challenge={challenge}")  # Debugging line
-    print("=========================================================")
-
     if mode == "subscribe" and token == AppConfig.VERIFY_TOKEN and challenge:
         return Response(content=challenge, media_type="text/plain")
     raise HTTPException(status_code=403, detail="Falha na verificação do webhook.")

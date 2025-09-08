@@ -16,10 +16,7 @@ class MetaApiAdapter(MetaApiOutputPort):
             "Content-Type": "application/json"
         }
         
-        print(f"Sending payload to Meta API: {payload}")  # Debugging line
-        
         response = requests.post(url, headers=headers, json=payload)
-        print(f"Response from Meta API: {response.json()}")  # Debugging line
         return response.json()
 
     def get_media_url(self, media_id: str) -> str:
@@ -28,10 +25,7 @@ class MetaApiAdapter(MetaApiOutputPort):
             "Authorization": f"Bearer {self.access_token}"
         }
         
-        print(f"Fetching media URL for media_id: {media_id}")  # Debugging line
-        
         response = requests.get(url, headers=headers)
-        print(f"Media URL response: {response.json()}") # Debugging line
 
         return response.json()
         
@@ -40,7 +34,6 @@ class MetaApiAdapter(MetaApiOutputPort):
             "Authorization": f"Bearer {self.access_token}"
         }
 
-        print(f"Downloading media from URL: {media_url}") # Debugging line
         response = requests.get(media_url, headers=headers)
         # Extrair o nome do arquivo do header 'Content-Disposition'
         content_disposition = response.headers.get("Content-Disposition")

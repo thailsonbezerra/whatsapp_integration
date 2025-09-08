@@ -11,11 +11,10 @@ class ProcessWebhookUseCase(ProcessWebhookPort):
         self.meta_api = meta_api
 
     def execute(self, waba_id, payload: dict) -> dict:
-        print("=========================================================")
-        print(f"Processing webhook for WABA ID: {waba_id}") # Debugging line
-        
         phone_number_id_waba = payload.get("metadata", {}).get("phone_number_id")
         phone_number_waba = payload.get("metadata", {}).get("display_phone_number")
+        print("=========================================================")
+        print(f"Processing webhook for WABA ID: {waba_id}, Phone Number: {phone_number_waba}, Payload: {payload}")
         normalized = normalize_webhook_event(payload, phone_number_waba)
         if normalized["type"] == "media":
             print("Processing media message...")
