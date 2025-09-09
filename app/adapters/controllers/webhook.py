@@ -4,6 +4,8 @@ from fastapi import APIRouter, HTTPException, Response, Request
 from config import AppConfig
 from app.core.usecases.process_webhook import ProcessWebhookUseCase
 from app.adapters.s3.s3_storage_adapter import S3StorageAdapter
+import logging
+logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 
@@ -31,5 +33,5 @@ async def handle_webhook(payload: dict):
         
         return result
     except Exception as e:
-        print(f"Erro ao processar webhook file: webhook.py: {e}")
+        logging.error(f"Erro ao processar webhook file: webhook.py: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao processar o webhook.")

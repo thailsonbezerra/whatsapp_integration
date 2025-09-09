@@ -2,6 +2,8 @@ from app.adapters.mappers.webhook_normalizer import normalize_webhook_event
 from app.core.ports.input import ProcessWebhookPort
 from app.core.ports.output import FileStoragePort
 from app.core.ports.output import MetaApiOutputPort
+import logging
+logging.basicConfig(level=logging.INFO)
 
 from io import BytesIO
 
@@ -13,9 +15,9 @@ class ProcessWebhookUseCase(ProcessWebhookPort):
     def execute(self, waba_id, payload: dict) -> dict:
         phone_number_id_waba = payload.get("metadata", {}).get("phone_number_id")
         phone_number_waba = payload.get("metadata", {}).get("display_phone_number")
-        print("=========================================================")
-        print(f"Received webhook for WABA ID: {waba_id}, Phone Number: {phone_number_waba}, Payload: {payload}")
-        print("=========================================================")
+        logging.info("=========================================================")
+        logging.info(f"Received webhook for WABA ID: {waba_id}, Phone Number: {phone_number_waba}, Payload: {payload}")
+        logging.info("=========================================================")
         normalized = normalize_webhook_event(payload, phone_number_waba)
         # if normalized["type"] == "media":
         #     print("Processing media message...")

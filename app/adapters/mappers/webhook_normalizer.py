@@ -1,4 +1,6 @@
 from typing import Dict, Optional
+import logging
+logging.basicConfig(level=logging.INFO)
 
 def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[Dict]:
     normalized = {
@@ -15,18 +17,18 @@ def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[D
         "origin_msg_id": "",
     }
 
-    print("==========================================================")
+    logging.info("==========================================================")
     if "errors" in payload:
-        print("Normalizing error event...")
+        logging.info("Normalizing error event...")
         return _normalize_error_event(payload, normalized)
     elif "statuses" in payload:
-        print("Normalizing status event...")
+        logging.info("Normalizing status event...")
         return _normalize_status_event(payload, normalized, phone_number_waba)
     elif "messages" in payload:
-        print("Normalizing message event...")
+        logging.info("Normalizing message event...")
         return _normalize_message_event(payload, normalized, phone_number_waba)
 
-    print("===========================================================")
+    logging.info("===========================================================")
     return None
 
 def _normalize_error_event(payload, normalized):
@@ -41,7 +43,7 @@ def _normalize_error_event(payload, normalized):
             "message_id": payload.get("id"),
             "sender": payload.get("from")
         })
-        print(normalized)
+        logging.info(f"Normalized error event: {normalized}")
         return normalized
     except Exception:
         return None
@@ -55,26 +57,27 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
         if errors:
             error = errors[0]
             normalized.update({
+                "message_id": status.get("id"),
                 "event_type": "error",
                 "subject": f"{error.get('code')} {error.get('title')}",
                 "body": error.get("error_data").get("details"),
+                "sender": phone_number_waba,
+                "recipient": status.get("recipient_id"),
                 "message_type": "failed",
-                "message_id": status.get("id"),
-                "sender": phone_number_waba
             })
-            print(normalized)
+            logging.info(f"Normalized status error event: {normalized}")
             return normalized
         
         normalized.update({
-            "event_type": "status",
             "message_id": status.get("id"),
+            "event_type": "status",
             "timestamp": status.get("timestamp"),
             "sender": phone_number_waba,
             "recipient": status.get("recipient_id"),
             "message_type": status.get("status"),
         })
-            
-        print(normalized)
+
+        logging.info(f"Normalized status event: {normalized}")
         return normalized
     except Exception:
         return None
