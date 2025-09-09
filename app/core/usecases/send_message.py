@@ -3,6 +3,8 @@ from app.core.ports.input import SendMessageInputPort
 from app.core.ports.output import MetaApiOutputPort
 from app.utils.mime_types import infer_mime_type_from_url, get_meta_media_type
 from typing import Dict
+import logging
+logging.basicConfig(level=logging.WARNING)
 
 class SendMessageUseCase(SendMessageInputPort):
     def __init__(self, meta_gateway: MetaApiOutputPort):
@@ -16,6 +18,7 @@ class SendMessageUseCase(SendMessageInputPort):
         meta_payload = self._build_meta_payload(payload)
 
         result = self.meta_gateway.send_message(meta_payload)
+        logging.warning(f"Meta API response: {result}")
         if "error" in result:
             return {"success": False, "error": "Failed to send message to Meta API."}
 

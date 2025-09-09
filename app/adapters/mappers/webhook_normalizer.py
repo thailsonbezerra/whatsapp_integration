@@ -1,8 +1,7 @@
-from typing import Dict, Optional
 import logging
 logging.basicConfig(level=logging.INFO)
 
-def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[Dict]:
+def normalize_webhook_event(payload, phone_number_waba):
     normalized = {
         "recipient": "",
         "sender_name": "",
