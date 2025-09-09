@@ -56,12 +56,13 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
             error = errors[0]
             normalized.update({
                 "event_type": "error",
-                "subject": error.get("title"),
-                "body": error.get("code"),
+                "subject": f"{error.get('code')} {error.get('title')}",
+                "body": error.get("error_data").get("details"),
                 "message_type": "failed",
                 "message_id": status.get("id"),
                 "sender": phone_number_waba
             })
+            print(normalized)
             return normalized
         
         normalized.update({
