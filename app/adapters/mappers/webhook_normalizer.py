@@ -15,13 +15,18 @@ def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[D
         "origin_msg_id": "",
     }
 
+    print("==========================================================")
     if "errors" in payload:
+        print("Normalizing error event...")
         return _normalize_error_event(payload, normalized)
     elif "statuses" in payload:
+        print("Normalizing status event...")
         return _normalize_status_event(payload, normalized, phone_number_waba)
     elif "messages" in payload:
+        print("Normalizing message event...")
         return _normalize_message_event(payload, normalized, phone_number_waba)
 
+    print("===========================================================")
     return None
 
 def _normalize_error_event(payload, normalized):
@@ -41,7 +46,6 @@ def _normalize_error_event(payload, normalized):
         return None
 
 def _normalize_status_event(payload, normalized, phone_number_waba):
-    print("Normalizing status event...")
     try:
         status = payload["statuses"][0]
         
@@ -116,5 +120,4 @@ def _normalize_message_event(payload, normalized, phone_number_waba):
 
         return normalized
     except Exception as e:
-        print(f"Erro ao processar mensagem: {e}")
         return None
