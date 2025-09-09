@@ -7,14 +7,14 @@ def normalize_webhook_event(payload: Dict, phone_number_waba: str) -> Optional[D
         "recipient": "",
         "sender_name": "",
         "sender": "",
-        "message_id": "",
+        "channel_message_id": "",
         "timestamp": "",
         "subject": "",
         "body": "",
         "message_type": "",
         "event_type": "",
         "channel_type": "whatsapp",
-        "origin_msg_id": "",
+        "reference_channel_message_id": "",
     }
 
     logging.info("==========================================================")
@@ -40,7 +40,7 @@ def _normalize_error_event(payload, normalized):
             "subject": error.get("title"),
             "body": error.get("message"),
             "message_type": "failed",
-            "message_id": payload.get("id"),
+            "channel_message_id": payload.get("id"),
             "sender": payload.get("from")
         })
         logging.info(f"Normalized error event: {normalized}")
@@ -57,7 +57,7 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
         if errors:
             error = errors[0]
             normalized.update({
-                "message_id": status.get("id"),
+                "channel_message_id": status.get("id"),
                 "event_type": "error",
                 "subject": f"{error.get('code')} {error.get('title')}",
                 "body": error.get("error_data").get("details"),
@@ -69,7 +69,7 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
             return normalized
         
         normalized.update({
-            "message_id": status.get("id"),
+            "channel_message_id": status.get("id"),
             "event_type": "status",
             "timestamp": status.get("timestamp"),
             "sender": phone_number_waba,
@@ -93,12 +93,12 @@ def _normalize_message_event(payload, normalized, phone_number_waba):
 
         normalized.update({
             "event_type": "message",
-            "message_id": message.get("id"),
+            "channel_message_id": message.get("id"),
             "timestamp": message.get("timestamp"),
             "sender": message.get("from"),
             "sender_name": profile.get("name"),
             "recipient": phone_number_waba,
-            "origin_msg_id": context.get("id") if context else "",
+            "reference_channel_message_id": context.get("id") if context else "",
             "message_type": msg_type
         })
 
@@ -121,7 +121,7 @@ def _normalize_message_event(payload, normalized, phone_number_waba):
             reaction = message.get("reaction", {})
             normalized.update({
                 "body": reaction.get("emoji"),
-                "origin_msg_id": reaction.get("message_id")
+                "reference_channel_message_id": reaction.get("message_id")
             })
 
         print(normalized)
