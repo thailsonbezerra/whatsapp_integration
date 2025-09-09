@@ -25,7 +25,11 @@ async def handle_webhook(payload: dict):
             storage=S3StorageAdapter(bucket_name=AppConfig.AWS_BUCKET_NAME),
             meta_api=get_meta_adapter()
         )
-        
+
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        print(payload)
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
         result = usecase.execute(
             payload["entry"][0]["id"],
             payload["entry"][0]["changes"][0]["value"]

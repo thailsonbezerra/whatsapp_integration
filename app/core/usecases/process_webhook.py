@@ -15,7 +15,6 @@ class ProcessWebhookUseCase(ProcessWebhookPort):
     def execute(self, waba_id, payload: dict) -> dict:
         phone_number_id_waba = payload.get("metadata", {}).get("phone_number_id")
         phone_number_waba = payload.get("metadata", {}).get("display_phone_number")
-        print(payload)
         logging.info("=========================================================")
         logging.info(f"Received webhook for WABA ID: {waba_id}, Phone Number: {phone_number_waba}, Payload: {payload}")
         logging.info("=========================================================")
