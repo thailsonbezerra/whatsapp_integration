@@ -41,6 +41,7 @@ def _normalize_error_event(payload, normalized):
             "message_id": payload.get("id"),
             "sender": payload.get("from")
         })
+        print(normalized)
         return normalized
     except Exception:
         return None
@@ -72,6 +73,7 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
             "message_type": status.get("status"),
         })
             
+        print(normalized)
         return normalized
     except Exception:
         return None
@@ -118,6 +120,7 @@ def _normalize_message_event(payload, normalized, phone_number_waba):
                 "origin_msg_id": reaction.get("message_id")
             })
 
+        print(normalized)
         return normalized
     except Exception as e:
         return None

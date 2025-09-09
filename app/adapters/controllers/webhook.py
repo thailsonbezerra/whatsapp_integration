@@ -18,8 +18,6 @@ def verify_webhook(request: Request):
 
 @router.post("/webhook", summary="Recebe notificações da Meta") 
 async def handle_webhook(payload: dict):
-    print("=========================================================")
-    print(f"Webhook payload received: {payload}")
     try:
         usecase = ProcessWebhookUseCase(
             storage=S3StorageAdapter(bucket_name=AppConfig.AWS_BUCKET_NAME),
@@ -33,5 +31,5 @@ async def handle_webhook(payload: dict):
         
         return result
     except Exception as e:
-        print(f"Erro ao processar webhook: {e}")
+        print(f"Erro ao processar webhook file: webhook.py: {e}")
         raise HTTPException(status_code=500, detail="Erro interno ao processar o webhook.")
