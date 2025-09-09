@@ -16,31 +16,30 @@ class ProcessWebhookUseCase(ProcessWebhookPort):
         print("=========================================================")
         print(f"Processing webhook for WABA ID: {waba_id}, Phone Number: {phone_number_waba}, Payload: {payload}")
         normalized = normalize_webhook_event(payload, phone_number_waba)
-        if normalized["type"] == "media":
-            print("Processing media message...")
-            media_id = normalized["body"]
+        # if normalized["type"] == "media":
+        #     print("Processing media message...")
+        #     media_id = normalized["body"]
             
-            media = self.meta_api.get_media_url(media_id)
+        #     media = self.meta_api.get_media_url(media_id)
             
-            print(f"Media details: {media}")
+        #     print(f"Media details: {media}")
             
-            if not media:
-                raise Exception(f"Media not found for ID: {media_id}")
+        #     if not media:
+        #         raise Exception(f"Media not found for ID: {media_id}")
             
-            media_url = media.get("url")
+        #     media_url = media.get("url")
             
-            media = self.meta_api.download_media(media_url)
+        #     media = self.meta_api.download_media(media_url)
             
-            if not media:
-                raise Exception(f"Failed to download media from URL: {media_url}")
+        #     if not media:
+        #         raise Exception(f"Failed to download media from URL: {media_url}")
 
-            uploaded_file_path = self.storage.upload_file(BytesIO(media["content"]), media["filename"]) 
-            normalized.update({
-                "media": {
-                    "body": uploaded_file_path,
-                }
-            })
-            
+        #     uploaded_file_path = self.storage.upload_file(BytesIO(media["content"]), media["filename"]) 
+        #     normalized.update({
+        #         "media": {
+        #             "body": uploaded_file_path,
+        #         }
+        #     })
             
         print(f"Normalized webhook event: {normalized}") # Debugging line
         print("=========================================================")

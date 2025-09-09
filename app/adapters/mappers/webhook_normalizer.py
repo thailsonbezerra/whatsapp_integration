@@ -45,6 +45,7 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
     try:
         status = payload["statuses"][0]
         
+        #code 131047 janela fechada
         errors = status.get("errors")
         if errors:
             error = errors[0]
