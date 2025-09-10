@@ -60,8 +60,8 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
                 "event_type": "error",
                 "subject": f"{error.get('code')} {error.get('title')}",
                 "body": error.get("error_data").get("details"),
-                "sender": phone_number_waba,
-                "recipient": status.get("recipient_id"),
+                "recipient": phone_number_waba,
+                "sender": status.get("recipient_id"),
                 "message_type": "failed",
             })
             logging.info(f"Normalized status error event: {normalized}")
@@ -71,8 +71,8 @@ def _normalize_status_event(payload, normalized, phone_number_waba):
             "channel_message_id": status.get("id"),
             "event_type": "status",
             "timestamp": status.get("timestamp"),
-            "sender": phone_number_waba,
-            "recipient": status.get("recipient_id"),
+            "recipient": phone_number_waba,
+            "sender": status.get("recipient_id"),
             "message_type": status.get("status"),
         })
 
