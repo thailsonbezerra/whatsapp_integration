@@ -11,11 +11,13 @@ class SendMessageUseCase(SendMessageInputPort):
         self.meta_gateway = meta_gateway
 
     def execute(self, payload: SendMessagePayload) -> Dict:
+        logging.info(f"SendMessageUseCase payload: {payload}")
         validation_error = self._validate_payload(payload)
         if validation_error:
             return {"success": False, "error": validation_error}
 
         meta_payload = self._build_meta_payload(payload)
+        logging.info(f"Meta payload: {meta_payload}")
 
         result = self.meta_gateway.send_message(meta_payload)
         logging.info(f"Meta API response: {result}")
