@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class SendMessagePayload(BaseModel):
     recipient: str
     sender: str
-    type: Literal["text", "media", "reaction"]
+    type: Literal["text", "media", "reaction", "notification"]
     body: Optional[str] = None
     subject: Optional[str] = None
     origin_msg_id: Optional[str] = None
